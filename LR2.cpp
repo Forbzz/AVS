@@ -77,8 +77,8 @@ void Task(void(*func) (int* array, bool flag), bool sleep = false)
 
 		check(arr);
 
-		cout << "Êîëè÷åñòâî ïîòîêîâ: " << numThreads << endl;
-		cout << "Âðåìÿ: " << time.count() << " c" << endl << endl;;
+		cout << "ÃŠÃ®Ã«Ã¨Ã·Ã¥Ã±Ã²Ã¢Ã® Ã¯Ã®Ã²Ã®ÃªÃ®Ã¢: " << numThreads << endl;
+		cout << "Ã‚Ã°Ã¥Ã¬Ã¿: " << time.count() << " c" << endl << endl;;
 	}
 }
 
@@ -244,15 +244,15 @@ void Task(Queue& q) {
                 threads[i].join();
 
 
-            cout << "Ïðîèçâîäèòåëè: " << consumerNum << "\tÏîòðåáèòåëè: " << producerNum << endl;
+            cout << "ÃÃ°Ã®Ã¨Ã§Ã¢Ã®Ã¤Ã¨Ã²Ã¥Ã«Ã¨: " << consumerNum << "\tÃÃ®Ã²Ã°Ã¥Ã¡Ã¨Ã²Ã¥Ã«Ã¨: " << producerNum << endl;
 
-            cout << "Ñóììà: " << sum << "\tÎæèäàåìàÿ ñóììà: " << taskNum * producerNum << endl;
+            cout << "Ã‘Ã³Ã¬Ã¬Ã : " << sum << "\tÃŽÃ¦Ã¨Ã¤Ã Ã¥Ã¬Ã Ã¿ Ã±Ã³Ã¬Ã¬Ã : " << taskNum * producerNum << endl;
 
             auto end = chrono::high_resolution_clock::now();
 
             chrono::duration<double> time = end - start;
 
-            cout << "Âðåìÿ: " << time.count() << "\n\n";
+            cout << "Ã‚Ã°Ã¥Ã¬Ã¿: " << time.count() << "\n\n";
 
             assert(sum == taskNum * producerNum);
         }
@@ -263,13 +263,13 @@ void Task(Queue& q) {
 int main() {
     setlocale(LC_ALL, "russian");
 
-    cout << "Mutex áåç óñûïëåíèÿ: " << endl;
+    cout << "Mutex Ã¡Ã¥Ã§ Ã³Ã±Ã»Ã¯Ã«Ã¥Ã­Ã¨Ã¿: " << endl;
     Task(mutexCounter);
-    //cout << endl << "Mutex ñ óñûïëåíèåì: " << endl;
+    //cout << endl << "Mutex Ã± Ã³Ã±Ã»Ã¯Ã«Ã¥Ã­Ã¨Ã¥Ã¬: " << endl;
     //Task(mutexCounter, true);
-    //cout << endl << "Atomic áåç óñûïëåíèÿ: " << endl;
+    //cout << endl << "Atomic Ã¡Ã¥Ã§ Ã³Ã±Ã»Ã¯Ã«Ã¥Ã­Ã¨Ã¿: " << endl;
     //Task(atomicCounter);
-    //cout << endl << "Atomic ñ óñûïëåíèåì: " << endl;
+    //cout << endl << "Atomic Ã± Ã³Ã±Ã»Ã¯Ã«Ã¥Ã­Ã¨Ã¥Ã¬: " << endl;
     //Task(atomicCounter, true);
 
     //DynamicMutexQueue a;
@@ -278,7 +278,7 @@ int main() {
     //vector<int> sizes = { 1,4,16 };
     //for (auto size : sizes) {
     //    StaticMutexQueue b(size);
-    //    cout << "Ðàçìåð: " << size << endl;
+    //    cout << "ÃÃ Ã§Ã¬Ã¥Ã°: " << size << endl;
     //    Task(b);
     //}
 
