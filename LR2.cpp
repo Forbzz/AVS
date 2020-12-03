@@ -13,8 +13,7 @@
 #define NumTasks (1024 * 1024)
 
 using namespace std;
-
-
+atomic<int> toPush = 0;
 mutex mut;
 int NumThreads[] = { 4,8,16,32 };
 int mutexIndex;
@@ -22,7 +21,8 @@ atomic<int> atomicIndex;
 ///////////////////////////////////////
 vector<int> consumerNums = { 1, 2, 4 };
 vector<int> produserNums = { 1, 2, 4 };
-int taskNum = 1024 * 10;
+vector<int> sizes = { 1, 4, 16 };
+atomic<int> taskNum = 102 * 1024;
 
 
 ////Task 1
@@ -54,9 +54,7 @@ void Task(void(*func) (int* array, bool flag), bool sleep = false)
         auto start = std::chrono::system_clock::now();
 
 		int* array = arrayInit();
-        int* arr = new int[NumTasks];
-        for (int i = 0; i < NumTasks; i++)
-            arr[i] = 0;
+
 		vector<thread> threads;
 
 		mutexIndex = 0;
@@ -64,7 +62,7 @@ void Task(void(*func) (int* array, bool flag), bool sleep = false)
 
 		for (int i = 0; i < numThreads; i++)
 		{
-			threads.push_back(thread(func, arr, sleep));
+			threads.push_back(thread(func, array, sleep));
 		}
 
 		for (int i = 0; i < numThreads; i++)
@@ -75,10 +73,10 @@ void Task(void(*func) (int* array, bool flag), bool sleep = false)
 
 		std::chrono::duration<double> time = end - start;
 
-		check(arr);
+		check(array);
 
-		cout << "Êîëè÷åñòâî ïîòîêîâ: " << numThreads << endl;
-		cout << "Âðåìÿ: " << time.count() << " c" << endl << endl;;
+		cout << "Количество потоков: " << numThreads << endl;
+		cout << "Время: " << time.count() << " c" << endl << endl;;
 	}
 }
 
@@ -169,6 +167,7 @@ private:
     mutex m;
     condition_variable push_condition;
     condition_variable pop_condition;
+    atomic<int> count = 0;
 
 public:
     StaticMutexQueue(int size)
@@ -182,10 +181,12 @@ public:
         push_condition.wait(ul, [&]() {return q.size() < queue_size; });
         q.push(val);
         pop_condition.notify_one();
+        
     }
 
     bool pop(uint8_t& val) override
     {
+        
         unique_lock<mutex> ul(m);
         if (q.empty())
         {
@@ -207,6 +208,32 @@ public:
 
 };
 
+
+
+void producer(Queue& q)
+{
+    for (int i = 0; i < taskNum; i++)
+    {
+        q.push(1);
+        toPush.fetch_add(1);
+    }
+}
+
+
+void consumer_for_all(Queue& q, atomic<int>& sum, int producerNum ) {
+
+    while (sum.load() < taskNum * producerNum) {
+        uint8_t k;
+        if (q.pop(k))
+        {
+        sum += k;
+        }
+    }
+
+}
+
+
+
 void Task(Queue& q) {
 
 
@@ -217,70 +244,55 @@ void Task(Queue& q) {
 
             atomic<int> sum = 0;
 
-            auto producer = [&]() {
-                for (int i = 0; i < taskNum; i++) {
-                    q.push(1);
-                }
-            };
-
-            auto consumer = [&]() {
-
-                for (int i = 0; i < taskNum * producerNum / consumerNum; i++) {
-                    uint8_t poppedValue = 0;
-                    while (!q.pop(poppedValue));
-                    sum += poppedValue;
-                }
-            };
-
 
             vector<thread> threads;
+
             for (int i = 0; i < producerNum; i++)
-                threads.push_back(thread(producer));
+                threads.push_back(thread(producer, std::ref(q)));
+
 
             for (int i = 0; i < consumerNum; i++)
-                threads.push_back(thread(consumer));
+                threads.push_back(thread(consumer_for_all, std::ref(q), std::ref(sum), producerNum));
+            // threads.push_back(thread(consumer,std::ref(b),std::ref(sum),producerNum,consumerNum));
 
             for (int i = 0; i < consumerNum + producerNum; i++)
                 threads[i].join();
 
 
-            cout << "Ïðîèçâîäèòåëè: " << consumerNum << "\tÏîòðåáèòåëè: " << producerNum << endl;
+            cout << "Производители: " << producerNum << "\tПотребители: " << consumerNum << endl;
 
-            cout << "Ñóììà: " << sum << "\tÎæèäàåìàÿ ñóììà: " << taskNum * producerNum << endl;
+            cout << "Сумма: " << sum << "\tОжидаемая сумма: " << taskNum * producerNum << endl;
 
             auto end = chrono::high_resolution_clock::now();
 
             chrono::duration<double> time = end - start;
 
-            cout << "Âðåìÿ: " << time.count() << "\n\n";
-
-            assert(sum == taskNum * producerNum);
+            cout << "Время: " << time.count() << "\n\n";
         }
     }
 }
 
-
 int main() {
     setlocale(LC_ALL, "russian");
 
-    cout << "Mutex áåç óñûïëåíèÿ: " << endl;
-    Task(mutexCounter);
-    //cout << endl << "Mutex ñ óñûïëåíèåì: " << endl;
+    //cout << "Mutex без усыпления: " << endl;
+    //Task(mutexCounter);
+    //cout << endl << "Mutex с усыплением: " << endl;
     //Task(mutexCounter, true);
-    //cout << endl << "Atomic áåç óñûïëåíèÿ: " << endl;
+    //cout << endl << "Atomic без усыпления: " << endl;
     //Task(atomicCounter);
-    //cout << endl << "Atomic ñ óñûïëåíèåì: " << endl;
+    //cout << endl << "Atomic с усыплением: " << endl;
     //Task(atomicCounter, true);
 
-    //DynamicMutexQueue a;
-    //Task(a);
+    DynamicMutexQueue a;
+    Task(a);
 
-    //vector<int> sizes = { 1,4,16 };
-    //for (auto size : sizes) {
-    //    StaticMutexQueue b(size);
-    //    cout << "Ðàçìåð: " << size << endl;
-    //    Task(b);
-    //}
+   /* vector<int> sizes = { 1,4,16 };
+    for (auto size : sizes) {
+        StaticMutexQueue b(size);
+        cout << "Размер: " << size << endl;
+        Task(b);
+    }*/
 
 
     return 0;
